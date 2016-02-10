@@ -227,7 +227,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 
       for (size_t i=0; i<marker_detector.markers->size(); i++)
 	{
-	  int id = (*(marker_detector.markers))[i].GetId();
+	  int id = (*(marker_detector.markers))[i].GetId();    
 
 	  // Draw if id is valid
 	  if(id >= 0){

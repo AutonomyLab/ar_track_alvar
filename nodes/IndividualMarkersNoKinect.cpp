@@ -48,6 +48,9 @@
 #include <dynamic_reconfigure/server.h>
 #include <ar_track_alvar/ParamsConfig.h>
 
+// Mani
+#include <sensor_msgs/RegionOfInterest.h>
+
 using namespace alvar;
 using namespace std;
 
@@ -57,8 +60,10 @@ cv_bridge::CvImagePtr cv_ptr_;
 image_transport::Subscriber cam_sub_;
 ros::Publisher arMarkerPub_;
 ros::Publisher rvizMarkerPub_;
+ros::Publisher roiPub_;
 ar_track_alvar_msgs::AlvarMarkers arPoseMarkers_;
 visualization_msgs::Marker rvizMarker_;
+sensor_msgs::RegionOfInterest roi_;
 tf::TransformListener *tf_listener;
 tf::TransformBroadcaster *tf_broadcaster;
 MarkerDetector<MarkerData> marker_detector;
@@ -107,7 +112,20 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 			{
 				//Get the pose relative to the camera
         		int id = (*(marker_detector.markers))[i].GetId(); 
-				Pose p = (*(marker_detector.markers))[i].pose;
+
+
+//        for (uint32_t c = 0; c < 4; c++)
+//        {
+//          ROS_WARN_STREAM("Corner " << c << " " << (*(marker_detector.markers))[i].marker_corners_img[c].x << " , " << (*(marker_detector.markers))[i].marker_corners_img[c].y);
+//        }
+        // Corners 0->3 is from top-right to bottom-right CCW
+        roi_.x_offset = (*(marker_detector.markers))[i].marker_corners_img[1].x;
+        roi_.y_offset = (*(marker_detector.markers))[i].marker_corners_img[1].y;
+        roi_.width = fabs((*(marker_detector.markers))[i].marker_corners_img[3].x - (*(marker_detector.markers))[i].marker_corners_img[1].x);
+        roi_.height = fabs((*(marker_detector.markers))[i].marker_corners_img[3].y - (*(marker_detector.markers))[i].marker_corners_img[1].y);
+        roiPub_.publish(roi_);
+
+        Pose p = (*(marker_detector.markers))[i].pose;
 				double px = p.translation[0]/100.0;
 				double py = p.translation[1]/100.0;
 				double pz = p.translation[2]/100.0;
@@ -272,6 +290,7 @@ int main(int argc, char *argv[])
 	tf_broadcaster = new tf::TransformBroadcaster();
 	arMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarMarkers > ("ar_pose_marker", 0);
 	rvizMarkerPub_ = n.advertise < visualization_msgs::Marker > ("visualization_marker", 0);
+  roiPub_ = n.advertise< sensor_msgs::RegionOfInterest > ("roi", 0);
 	
   // Prepare dynamic reconfiguration
   dynamic_reconfigure::Server < ar_track_alvar::ParamsConfig > server;
