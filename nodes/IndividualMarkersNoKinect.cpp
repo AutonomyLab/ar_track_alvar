@@ -49,6 +49,7 @@
 #include <ar_track_alvar/ParamsConfig.h>
 
 // Mani
+#include <algorithm>
 #include <sensor_msgs/RegionOfInterest.h>
 
 using namespace alvar;
@@ -119,10 +120,19 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 //          ROS_WARN_STREAM("Corner " << c << " " << (*(marker_detector.markers))[i].marker_corners_img[c].x << " , " << (*(marker_detector.markers))[i].marker_corners_img[c].y);
 //        }
         // Corners 0->3 is from top-right to bottom-right CCW
-        roi_.x_offset = (*(marker_detector.markers))[i].marker_corners_img[1].x;
-        roi_.y_offset = (*(marker_detector.markers))[i].marker_corners_img[1].y;
-        roi_.width = fabs((*(marker_detector.markers))[i].marker_corners_img[3].x - (*(marker_detector.markers))[i].marker_corners_img[1].x);
-        roi_.height = fabs((*(marker_detector.markers))[i].marker_corners_img[3].y - (*(marker_detector.markers))[i].marker_corners_img[1].y);
+        std::vector<PointDouble>& roi_corners = (*(marker_detector.markers))[i].marker_corners_img;
+
+//        roi_.x_offset = (*(marker_detector.markers))[i].marker_corners_img[1].x;
+//        roi_.y_offset = (*(marker_detector.markers))[i].marker_corners_img[1].y;
+//        roi_.width = fabs((*(marker_detector.markers))[i].marker_corners_img[3].x - (*(marker_detector.markers))[i].marker_corners_img[1].x);
+//        roi_.height = fabs((*(marker_detector.markers))[i].marker_corners_img[3].y - (*(marker_detector.markers))[i].marker_corners_img[1].y);
+
+        roi_.x_offset = std::min(std::min(roi_corners[0].x, roi_corners[1].x), std::min(roi_corners[2].x, roi_corners[3].x));
+        roi_.y_offset = std::min(std::min(roi_corners[0].y, roi_corners[1].y), std::min(roi_corners[2].y, roi_corners[3].y));
+        const double roi_max_x = std::max(std::max(roi_corners[0].x, roi_corners[1].x), std::max(roi_corners[2].x, roi_corners[3].x));
+        const double roi_max_y = std::max(std::max(roi_corners[0].y, roi_corners[1].y), std::max(roi_corners[2].y, roi_corners[3].y));
+        roi_.width = roi_max_x - roi_.x_offset;
+        roi_.height = roi_max_y - roi_.y_offset;
         roiPub_.publish(roi_);
 
         Pose p = (*(marker_detector.markers))[i].pose;

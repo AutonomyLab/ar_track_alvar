@@ -23,6 +23,8 @@
 
 #include "ar_track_alvar/MultiMarkerBundle.h"
 
+#include <opencv2/calib3d/calib3d_c.h>
+
 using namespace std;
 
 namespace alvar {
